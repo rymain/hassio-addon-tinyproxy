@@ -1,9 +1,10 @@
 ---
 name: Tinyproxy
-version: "2.0.0"
+version: "3.0.0"
 slug: tinyproxy
-description: Private HTTP/HTTPS forward proxy (Tinyproxy) for Tailscale or LAN clients
+description: Lightweight private HTTP/HTTPS forward proxy for Tailscale or LAN clients
 url: https://github.com/rymain/hassio-addon-tinyproxy
+image: ghcr.io/rymain/{arch}-addon-tinyproxy
 arch:
   - aarch64
   - amd64

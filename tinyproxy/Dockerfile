@@ -1,15 +1,12 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=alpine:3.21
 FROM ${BUILD_FROM}
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN apk add --no-cache tinyproxy jq
 
-RUN apk add --no-cache tinyproxy
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 
-COPY rootfs /
-
-RUN chmod a+x \
-      /etc/s6-overlay/s6-rc.d/tinyproxy/run \
-      /etc/s6-overlay/s6-rc.d/tinyproxy/finish
+ENTRYPOINT ["/run.sh"]
 
 ARG BUILD_ARCH
 ARG BUILD_VERSION
@@ -18,4 +15,5 @@ LABEL \
   io.hass.description="Private HTTP/HTTPS forward proxy" \
   io.hass.type="addon" \
   io.hass.arch="${BUILD_ARCH}" \
-  io.hass.version="${BUILD_VERSION}"
+  io.hass.version="${BUILD_VERSION}" \
+  org.opencontainers.image.source="https://github.com/rymain/hassio-addon-tinyproxy"

@@ -1,0 +1,72 @@
+---
+name: Build and publish add-on images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax and shellcheck
+        run: |
+          sh -n tinyproxy/run.sh
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -s sh tinyproxy/run.sh
+      - name: YAML parse
+        run: |
+          python3 -c "
+          import yaml
+          for f in ['repository.yaml','tinyproxy/config.yaml','tinyproxy/build.yaml']:
+              yaml.safe_load(open(f)); print('OK', f)
+          "
+
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - arch: aarch64
+            platform: linux/arm64
+            base: arm64v8/alpine:3.21
+          - arch: armv7
+            platform: linux/arm/v7
+            base: arm32v7/alpine:3.21
+          - arch: amd64
+            platform: linux/amd64
+            base: amd64/alpine:3.21
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Read add-on version
+        id: ver
+        run: |
+          v=$(grep -E '^version:' tinyproxy/config.yaml | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Build and push ${{ matrix.arch }}
+        uses: docker/build-push-action@v6
+        with:
+          context: tinyproxy
+          platforms: ${{ matrix.platform }}
+          push: true
+          provenance: false
+          build-args: |
+            BUILD_FROM=${{ matrix.base }}
+            BUILD_ARCH=${{ matrix.arch }}
+            BUILD_VERSION=${{ steps.ver.outputs.version }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.arch }}-addon-tinyproxy:${{ steps.ver.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.arch }}-addon-tinyproxy:latest
