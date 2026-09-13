@@ -1,0 +1,39 @@
+---
+name: Tinyproxy
+version: "2.0.0"
+slug: tinyproxy
+description: Private HTTP/HTTPS forward proxy (Tinyproxy) for Tailscale or LAN clients
+url: https://github.com/rymain/hassio-addon-tinyproxy
+arch:
+  - aarch64
+  - amd64
+  - armv7
+init: false
+startup: services
+boot: auto
+host_network: false
+ports:
+  8888/tcp: 8888
+ports_description:
+  8888/tcp: HTTP forward-proxy port. Do NOT port-forward this from the internet.
+options:
+  port: 8888
+  allow:
+    - 100.64.0.0/10
+  basic_auth_username: ""
+  basic_auth_password: ""
+  connect_ports:
+    - 443
+    - 563
+  timeout: 600
+  log_level: Info
+schema:
+  port: int(1024,65535)
+  allow:
+    - str
+  basic_auth_username: str?
+  basic_auth_password: password?
+  connect_ports:
+    - int(1,65535)
+  timeout: int(1,86400)
+  log_level: list(Critical|Error|Warning|Notice|Connect|Info)
